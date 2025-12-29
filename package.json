@@ -8,12 +8,19 @@
     "dev": "node build.js --watch",
     "build": "node build.js",
     "check": "tsc --noEmit",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "deploy": "pnpm build && gh-pages -d dist"
   },
   "devDependencies": {
     "@types/chrome": "^0.0.277",
+    "@types/chromecast-caf-receiver": "^6.0.25",
+    "@types/chromecast-caf-sender": "^1.0.11",
     "esbuild": "^0.24.2",
+    "gh-pages": "^6.3.0",
     "prettier": "^3.4.2",
     "typescript": "^5.7.2"
+  },
+  "dependencies": {
+    "dom-chef": "^5.1.1"
   }
 }

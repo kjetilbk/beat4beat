@@ -1,6 +1,6 @@
 import * as esbuild from 'esbuild';
 import { createServer } from 'node:http';
-import { readFile } from 'node:fs/promises';
+import { readFile, copyFile, mkdir } from 'node:fs/promises';
 import { join, basename } from 'node:path';
 
 const watch = process.argv.includes('--watch');
@@ -12,6 +12,9 @@ const baseConfig = {
   format: 'esm',
   sourcemap: true,
   write: !watch,
+  jsx: 'transform',
+  jsxFactory: 'h',
+  jsxFragment: 'Fragment',
   loader: {
     '.ts': 'ts',
     '.tsx': 'tsx',
@@ -20,13 +23,13 @@ const baseConfig = {
 
 const senderConfig = {
   ...baseConfig,
-  entryPoints: ['src/sender/index.ts'],
+  entryPoints: ['src/sender/index.tsx'],
   outfile: 'dist/sender/bundle.js',
 };
 
 const receiverConfig = {
   ...baseConfig,
-  entryPoints: ['src/receiver/index.ts'],
+  entryPoints: ['src/receiver/index.tsx'],
   outfile: 'dist/receiver/bundle.js',
 };
 
@@ -152,7 +155,7 @@ if (watch) {
       }
 
       try {
-        const filePath = join('dist', pathname);
+        const filePath = join('public', pathname);
         const content = await readFile(filePath);
         res.writeHead(200, { 'Content-Type': getMimeType(pathname) });
         res.end(content);
@@ -172,5 +175,15 @@ if (watch) {
 } else {
   await esbuild.build(senderConfig);
   await esbuild.build(receiverConfig);
+
+  await mkdir('dist/sender', { recursive: true });
+  await mkdir('dist/receiver', { recursive: true });
+
+  await copyFile('public/sender/index.html', 'dist/sender/index.html');
+  await copyFile('public/receiver/index.html', 'dist/receiver/index.html');
+
   console.log('✅ Build complete');
+  console.log('📦 Deployable files:');
+  console.log('   dist/sender/   (index.html + bundle.js)');
+  console.log('   dist/receiver/ (index.html + bundle.js)');
 }
