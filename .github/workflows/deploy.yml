@@ -31,6 +31,8 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
+        env:
+          CAST_APP_ID: ${{ secrets.CAST_APP_ID }}
 
       - uses: actions/upload-pages-artifact@v3
         with:

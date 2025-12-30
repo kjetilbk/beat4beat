@@ -2,6 +2,15 @@ import * as esbuild from 'esbuild';
 import { createServer } from 'node:http';
 import { readFile, copyFile, mkdir } from 'node:fs/promises';
 import { join, basename } from 'node:path';
+import { config } from 'dotenv';
+
+config();
+
+if (!process.env.CAST_APP_ID) {
+  console.error('❌ Error: CAST_APP_ID environment variable is required');
+  console.error('   Create a .env file with: CAST_APP_ID=your_app_id');
+  process.exit(1);
+}
 
 const watch = process.argv.includes('--watch');
 
@@ -18,6 +27,9 @@ const baseConfig = {
   loader: {
     '.ts': 'ts',
     '.tsx': 'tsx',
+  },
+  define: {
+    'process.env.CAST_APP_ID': JSON.stringify(process.env.CAST_APP_ID),
   },
 };
 

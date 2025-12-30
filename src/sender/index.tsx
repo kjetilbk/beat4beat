@@ -1,7 +1,7 @@
 import { h } from 'dom-chef';
 
 const NAMESPACE = 'urn:x-cast:com.beat4beat';
-const APP_ID = 'CC1AD845';
+const APP_ID = process.env.CAST_APP_ID!;
 
 interface TestMessage {
   type: string;
@@ -118,6 +118,7 @@ function onMessageReceived(_namespace: string, messageString: string) {
 async function requestCastSession() {
   try {
     const context = cast.framework.CastContext.getInstance();
+    console.log({context})
     await context.requestSession();
     console.log('[Sender] Cast session requested');
   } catch (err) {
@@ -182,8 +183,8 @@ function initializeCastApi() {
 
     context.setOptions({
       receiverApplicationId: APP_ID,
-      autoJoinPolicy: chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED,
-      resumeSavedSession: true,
+      autoJoinPolicy: chrome.cast.AutoJoinPolicy.PAGE_SCOPED,
+      resumeSavedSession: false,
     });
 
     context.addEventListener(

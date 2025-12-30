@@ -21,6 +21,9 @@ importers:
       '@types/chromecast-caf-sender':
         specifier: ^1.0.11
         version: 1.0.11
+      dotenv:
+        specifier: ^17.2.3
+        version: 17.2.3
       esbuild:
         specifier: ^0.24.2
         version: 0.24.2
@@ -252,6 +255,10 @@ packages:
 
   dom-chef@5.1.1:
     resolution: {integrity: sha512-lCRaSVJJsq+oE+1xXfuowDRRFoj4kbYRJVBLtQ91KaabjZz3y0tbldhuzGK1ko4mvSdJDRTbvK1Vwj6p4ursHw==}
+
+  dotenv@17.2.3:
+    resolution: {integrity: sha512-JVUnt+DUIzu87TABbhPmNfVdBDt18BLOWjMUFJMSi/Qqg7NTYtabbvSNJGOJ7afbRuv9D/lngizHtP7QyLQ+9w==}
+    engines: {node: '>=12'}
 
   email-addresses@5.0.0:
     resolution: {integrity: sha512-4OIPYlA6JXqtVn8zpHpGiI7vE6EQOAg16aGnDMIAlZVinnoZ8208tW1hAbjWydgN/4PLTT9q+O1K6AH/vALJGw==}
@@ -562,6 +569,8 @@ snapshots:
     dependencies:
       '@types/react': 17.0.90
       svg-tag-names: 3.0.1
+
+  dotenv@17.2.3: {}
 
   email-addresses@5.0.0: {}
 
