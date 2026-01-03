@@ -1,0 +1,111 @@
+:root {
+  --bg-dark: hsl(60, 50%, 90%);
+  --bg: hsl(60, 50%, 95%);
+  --bg-light: hsl(60, 50%, 100%);
+  --text: hsl(60, 50%, 5%);
+  /*--highlight: hsl(60, 50%, 95%);*/
+  --text-muted: hsl(60, 50%, 30%);
+  --gradient: linear-gradient(0deg, var(--bg) 95%, var(--bg-light));
+  --gradient-hover: linear-gradient(0deg, var(--bg), var(--bg-light));
+  --border-card: solid 1px var(--bg);
+  --shadow-s:
+    inset 0 1px 2px #ffffff30, 0 1px 2px #00000030, 0 2px 4px #00000015;
+  --shadow-m:
+    inset 0 1px 2px #ffffff50, 0 2px 4px #00000030, 0 4px 8px #00000015;
+  --shadow-l:
+    inset 0 1px 2px #ffffff70, 0 4px 6px #00000030, 0 6px 10px #00000015;
+}
+
+/*body.dark {
+  --bg-dark: hsl(170, 50%, 5%);
+  --bg: hsl(170, 50%, 10%);
+  --bg-light: hsl(170, 50%, 15%);
+  --text: hsl(170, 50%, 95%);
+  --text-muted: hsl(170, 50%, 70%);
+  --border: hsl(170, 50%, 30%);
+  --highlight: hsl(170, 50%, 60%);
+  --border-card: solid 1px var(--border);
+  --gradient: linear-gradient(0deg, var(--bg) 95%, var(--bg-light));
+  --gradient-hover: linear-gradient(0deg, var(--bg), var(--bg-light));
+}*/
+
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--bg-dark);
+  color: var(--text);
+  margin: 0;
+}
+
+main {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 42px;
+}
+
+button {
+  background: var(--bg-light);
+  padding: 0.5rem 1rem 0.7rem 1rem;
+  color: var(--text);
+  font-weight: 700;
+  border-radius: 0.5rem;
+  border: none;
+  margin-top: 1.5rem;
+  border: var(--border-card);
+  box-shadow: var(--shadow-s);
+}
+
+.card,
+.mode-picker {
+  padding: 1.5rem;
+  border-radius: 3px;
+  background: var(--bg);
+  border: var(--border-card);
+  box-shadow: var(--shadow-s);
+  display: flex;
+  align-items: center;
+}
+
+.mode-picker {
+  width: 260px;
+  height: 260px;
+  padding: 32px;
+  box-sizing: border-box;
+  flex-direction: column;
+
+  &:hover {
+    background: var(--gradient-hover);
+    box-shadow: var(--shadow-l);
+    cursor: pointer;
+  }
+}
+
+.mode-icon {
+  margin-bottom: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mode-title {
+  margin-bottom: 14px;
+  font-size: 32px;
+  line-height: 39px;
+}
+
+.mode-description {
+  font-size: 14px;
+  line-height: 17px;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.card {
+  width: 160px;
+  height: 260px;
+  justify-content: center;
+  font-size: 96px;
+  text-align: center;
+}

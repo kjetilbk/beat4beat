@@ -1,325 +1,89 @@
 import { h } from 'dom-chef';
+import * as icons from './icons';
+import { createGameCanvas } from './GameCanvas';
 
-const NAMESPACE = 'urn:x-cast:com.beat4beat';
-const APP_ID = process.env.CAST_APP_ID!;
-
-interface TestMessage {
-  type: string;
-  data: string;
-  timestamp: number;
-}
-
-interface AckMessage {
-  type: string;
-  receivedType: string;
-  timestamp: number;
-}
-
-let castSession: cast.framework.CastSession | null = null;
-const messageLog: {
-  timestamp: number;
-  direction: string;
-  message: unknown;
-}[] = [];
-
-function updateStatus(message: string) {
-  const statusEl = document.getElementById('status');
-  if (statusEl) {
-    statusEl.textContent = message;
-  }
-  console.log(`[Sender Status] ${message}`);
-}
-
-function updateUI() {
-  const sendTestBtn = document.getElementById(
-    'sendTestBtn'
-  ) as HTMLButtonElement | null;
-  const connectBtn = document.getElementById(
-    'connectBtn'
-  ) as HTMLButtonElement | null;
-
-  if (sendTestBtn) {
-    sendTestBtn.disabled = !castSession;
-    if (castSession) {
-      sendTestBtn.style.opacity = '1';
-      sendTestBtn.style.cursor = 'pointer';
-    } else {
-      sendTestBtn.style.opacity = '0.5';
-      sendTestBtn.style.cursor = 'not-allowed';
-    }
-  }
-
-  if (connectBtn) {
-    connectBtn.disabled = !!castSession;
-    if (castSession) {
-      connectBtn.textContent = 'Connected';
-      connectBtn.style.opacity = '0.5';
-      connectBtn.style.cursor = 'not-allowed';
-    } else {
-      connectBtn.textContent = 'Connect to Cast Device';
-      connectBtn.style.opacity = '1';
-      connectBtn.style.cursor = 'pointer';
-    }
-  }
-}
-
-function addToMessageLog(
-  direction: string,
-  message: TestMessage | AckMessage
-) {
-  messageLog.push({
-    timestamp: Date.now(),
-    direction,
-    message,
-  });
-
-  const messageLogEl = document.getElementById('messageLog');
-  if (!messageLogEl) return;
-
-  const date = new Date();
-  const isOutgoing = direction === 'sent';
-  const logEntry = (
-    <div
-      style={{
-        marginBottom: '10px',
-        padding: '8px',
-        borderLeft: `3px solid ${isOutgoing ? '#4caf50' : '#2196f3'}`,
-        background: '#fafafa',
-      }}
-    >
-      <div style={{ fontSize: '12px', color: '#666', marginBottom: '4px' }}>
-        {date.toLocaleTimeString()} - {direction.toUpperCase()}
+const landingUi = (
+  <main>
+    <div className="mode-picker">
+      <div className="mode-icon">
+        <icons.Chromecast />
       </div>
-      <div style={{ fontFamily: 'monospace', fontSize: '13px' }}>
-        {JSON.stringify(message)}
+      <div className="mode-title">Chromecast</div>
+      <div className="mode-description">
+        May not work with built-in TV Chromecast
       </div>
     </div>
-  );
+    <div className="mode-picker">
+      <div className="mode-icon">
+        <icons.Airplay />
+      </div>
+      <div className="mode-title">AirPlay</div>
+      <div className="mode-description">Stream game board using AirPlay</div>
+    </div>
+    <div
+      className="mode-picker"
+      onClick={() => {
+        window.app.removeChild(landingUi);
+        window.app.appendChild(thisScreenUi);
+      }}
+    >
+      <div className="mode-icon">
+        <icons.Screen />
+      </div>
+      <div className="mode-title">This screen</div>
+      <div className="mode-description">
+        Display game board here (for HDMI etc)
+      </div>
+    </div>
+  </main>
+);
 
-  if (messageLog.length === 1) {
-    messageLogEl.innerHTML = '';
-  }
-
-  messageLogEl.appendChild(logEntry);
-  messageLogEl.scrollTop = messageLogEl.scrollHeight;
-}
-
-function onMessageReceived(_namespace: string, messageString: string) {
-  console.log('[Sender] Message received:', messageString);
-
-  try {
-    const message: AckMessage = JSON.parse(messageString);
-    addToMessageLog('received', message);
-  } catch (err) {
-    console.error('[Sender] Error parsing message:', err);
-  }
-}
-
-async function requestCastSession() {
-  try {
-    const context = cast.framework.CastContext.getInstance();
-    console.log({context})
-    await context.requestSession();
-    console.log('[Sender] Cast session requested');
-  } catch (err) {
-    console.error('[Sender] Error requesting session:', err);
-    updateStatus(
-      `❌ Connection failed: ${err instanceof Error ? err.message : String(err)}`
-    );
-  }
-}
-
-async function sendTestMessage() {
-  if (!castSession) {
-    updateStatus('❌ No active cast session');
-    return;
-  }
-
-  const message: TestMessage = {
-    type: 'test',
-    data: 'hello from sender',
-    timestamp: Date.now(),
-  };
-
-  try {
-    await castSession.sendMessage(NAMESPACE, message);
-    console.log('[Sender] Message sent:', message);
-    addToMessageLog('sent', message);
-    updateStatus('✅ Message sent successfully');
-  } catch (err) {
-    console.error('[Sender] Error sending message:', err);
-    updateStatus(
-      `❌ Error: ${err instanceof Error ? err.message : String(err)}`
-    );
-  }
-}
-
-function onSessionStateChanged(event: any) {
-  console.log('[Sender] Session state changed:', event);
-
-  castSession = cast.framework.CastContext.getInstance().getCurrentSession();
-
-  if (castSession) {
-    updateStatus(
-      `✅ Connected to ${castSession.getCastDevice().friendlyName}`
-    );
-
-    castSession.addMessageListener(NAMESPACE, onMessageReceived);
-
-    console.log('[Sender] Added message listener for namespace:', NAMESPACE);
-  } else {
-    updateStatus('⚪ Not connected');
-  }
-
-  updateUI();
-}
-
-function initializeCastApi() {
-  console.log('[Sender] Initializing Cast API...');
-  updateStatus('Initializing Cast API...');
-
-  try {
-    const context = cast.framework.CastContext.getInstance();
-
-    context.setOptions({
-      receiverApplicationId: APP_ID,
-      autoJoinPolicy: chrome.cast.AutoJoinPolicy.PAGE_SCOPED,
-      resumeSavedSession: false,
-    });
-
-    context.addEventListener(
-      cast.framework.CastContextEventType.SESSION_STATE_CHANGED,
-      onSessionStateChanged
-    );
-
-    castSession = context.getCurrentSession();
-    if (castSession) {
-      castSession.addMessageListener(NAMESPACE, onMessageReceived);
-    }
-
-    updateStatus('✅ Cast API initialized - Ready to cast');
-    updateUI();
-
-    const connectBtn = document.getElementById(
-      'connectBtn'
-    ) as HTMLButtonElement | null;
-    if (connectBtn) connectBtn.disabled = false;
-
-    console.log('[Sender] Cast API initialized successfully');
-    console.log(`[Sender] App ID: ${APP_ID}`);
-    console.log(`[Sender] Namespace: ${NAMESPACE}`);
-  } catch (err) {
-    console.error('[Sender] Cast API initialization error:', err);
-    updateStatus(
-      `❌ Error: ${err instanceof Error ? err.message : String(err)}`
-    );
-  }
-}
-
-window['__onGCastApiAvailable'] = (isAvailable: boolean) => {
-  console.log('[Sender] Cast API available:', isAvailable);
-
-  if (isAvailable) {
-    initializeCastApi();
-  } else {
-    updateStatus('❌ Cast API not available');
-  }
+const gameState = {
+  cards: [
+    { id: 1, content: 'love', revealed: false },
+    { id: 2, content: 'summer', revealed: false },
+    { id: 3, content: 'skip', revealed: false },
+  ],
 };
 
-const app = document.getElementById('app');
-if (app) {
-  const ui = (
-    <div
-      style={{
-        fontFamily: 'sans-serif',
-        padding: '20px',
-        maxWidth: '800px',
-        margin: '0 auto',
-      }}
-    >
-      <h1>Beat for Beat - Sender</h1>
+const gameCanvas = createGameCanvas();
 
-      <div
-        style={{
-          margin: '20px 0',
-          padding: '15px',
-          background: '#e3f2fd',
-          borderRadius: '8px',
-        }}
-      >
-        <h2>Cast Control</h2>
-        <button
-          id="connectBtn"
-          disabled
-          onClick={requestCastSession}
-          style={{
-            padding: '10px 20px',
-            fontSize: '14px',
-            background: '#2196f3',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: 'pointer',
-          }}
-        >
-          Connect to Cast Device
-        </button>
-        <p id="status" style={{ color: '#666', fontSize: '14px', marginTop: '10px' }}>
-          SDK loading...
-        </p>
-      </div>
+gameCanvas.element.style.width = '100vw';
+gameCanvas.element.style.height = '100vh';
+gameCanvas.element.style.objectFit = 'contain';
 
-      <div
-        style={{
-          margin: '20px 0',
-          padding: '15px',
-          background: '#fff3e0',
-          borderRadius: '8px',
-        }}
-      >
-        <h2>Actions</h2>
-        <button
-          id="sendTestBtn"
-          disabled
-          onClick={sendTestMessage}
-          style={{
-            padding: '12px 24px',
-            fontSize: '16px',
-            background: '#ff9800',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: 'pointer',
-          }}
-        >
-          Send Test Message
-        </button>
-      </div>
+document.addEventListener('keyup', (e: KeyboardEvent) => {
+  gameCanvas.handleKeyPress(e.key);
+});
 
-      <div
-        style={{
-          margin: '20px 0',
-          padding: '15px',
-          background: '#f3e5f5',
-          borderRadius: '8px',
-        }}
-      >
-        <h2>Message Log</h2>
-        <div
-          id="messageLog"
-          style={{
-            maxHeight: '300px',
-            overflowY: 'auto',
-            background: 'white',
-            padding: '10px',
-            borderRadius: '4px',
-          }}
-        >
-          <p style={{ color: '#999' }}>No messages yet...</p>
-        </div>
-      </div>
-    </div>
-  );
+gameCanvas.addEventListener('card-picked', async (id: number) => {
+  console.log('Card picked:', id);
+  const card = gameState.cards.find((c) => c.id === id);
+  await gameCanvas.pickCard(id);
+  if (card) {
+    card.revealed = true;
+    gameCanvas.render(gameState);
+  }
+});
 
-  app.appendChild(ui);
-}
+gameCanvas.render(gameState);
+
+const styles = getComputedStyle(document.documentElement);
+const bgDark = styles.getPropertyValue('--bg-dark').trim();
+
+const thisScreenUi = (
+  <main
+    style={{
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      width: '100vw',
+      height: '100vh',
+      background: bgDark,
+    }}
+  >
+    {gameCanvas.element}
+  </main>
+);
+
+window.app.appendChild(landingUi);

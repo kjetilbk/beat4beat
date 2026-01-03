@@ -3,6 +3,7 @@ import { createServer } from 'node:http';
 import { readFile, copyFile, mkdir } from 'node:fs/promises';
 import { join, basename } from 'node:path';
 import { config } from 'dotenv';
+import chokidar from 'chokidar';
 
 config();
 
@@ -27,6 +28,7 @@ const baseConfig = {
   loader: {
     '.ts': 'ts',
     '.tsx': 'tsx',
+    '.svg': 'text',
   },
   define: {
     'process.env.CAST_APP_ID': JSON.stringify(process.env.CAST_APP_ID),
@@ -116,17 +118,12 @@ if (watch) {
 
   await doBuild();
 
-  await senderCtx.watch();
-  await receiverCtx.watch();
-
-  senderCtx.rebuild = () => {
+  chokidar.watch(['./src', './public'], { persistent: true }).on('all', () => {
     clearTimeout(build.timeout);
-    build.timeout = setTimeout(() => doBuild(), 50);
-  };
-  receiverCtx.rebuild = () => {
-    clearTimeout(build.timeout);
-    build.timeout = setTimeout(() => doBuild(), 50);
-  };
+    build.timeout = setTimeout(() => {
+      doBuild();
+    }, 50);
+  });
 
   const server = createServer((req, res) => {
     (async () => {
@@ -155,6 +152,7 @@ if (watch) {
         const headers = {
           ETag: file.hash,
           'Content-Type': getMimeType(pathname),
+          'Cache-Control': 'no-cache',
         };
 
         if (req.headers['if-none-match'] === file.hash) {
@@ -169,7 +167,10 @@ if (watch) {
       try {
         const filePath = join('public', pathname);
         const content = await readFile(filePath);
-        res.writeHead(200, { 'Content-Type': getMimeType(pathname) });
+        res.writeHead(200, {
+          'Content-Type': getMimeType(pathname),
+          'Cache-Control': 'no-cache',
+        });
         res.end(content);
       } catch {
         res.writeHead(404);
